@@ -41,5 +41,20 @@ namespace Multiplayer
 			streakBonus = TFUtils.LoadInt(dict, "streak_bonus");
 			expiration = DateTime.Parse(dict["expiration_date"].ToString());
 		}
+
+		public MatchData(string id, string name, string leader, int leaderLevel, string[] landscapeTypes)
+		{
+			matchId = id;
+			opponentName = name;
+			opponentIcon = string.Empty;
+			opponentLeader = leader;
+			opponentLeaderLevel = leaderLevel;
+			wagerWin = 0;
+			wagerLose = 0;
+			winStreak = 0;
+			streakBonus = 0;
+			expiration = DateTime.MaxValue;
+			landscapes = "{\"landscape\":[\"" + string.Join("\",\"", landscapeTypes) + "\"]}";
+		}
 	}
 }

@@ -199,7 +199,7 @@ public class CWQuestLoad : MonoBehaviour
 			if (Flags.InMPMode)
 			{
 				CWMPMapController.MPData matchData = CWMPMapController.GetInstance().mLastMPData;
-				opponentDeck = AIDeckManager.Instance.GetMPDeck(matchData.mLandscapes, matchData.mCards, matchData.OpponentLeader, matchData.mLeaderLevel);
+				opponentDeck = AIDeckManager.Instance.GetMPDeck(matchData.mLandscapes, matchData.mCards, matchData.mCardLevels, matchData.OpponentLeader, matchData.mLeaderLevel);
 			}
 			else if (qd.IsQuestType("fc"))
 			{

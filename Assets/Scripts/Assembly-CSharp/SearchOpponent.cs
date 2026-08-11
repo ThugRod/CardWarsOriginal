@@ -34,6 +34,21 @@ public class SearchOpponent : AsyncData<MatchData>
 
 	private void OnClick()
 	{
+		if (LanRealtimeManager.IsConnected && LanRealtimeManager.Instance.PeerProfile != null)
+		{
+			LanRealtimeManager.Instance.ApplyPeerProfileToLegacyState();
+			MatchData lanMatch = LanRealtimeManager.Instance.CreateLegacyMatchData();
+			if ((bool)refreshMatch && lanMatch != null)
+			{
+				refreshMatch.RefreshValues(lanMatch);
+			}
+			if ((bool)GoButton)
+			{
+				GoButton.SetActive(true);
+			}
+			UICamera.UnlockInput();
+			return;
+		}
 		PlayerInfoScript instance = PlayerInfoScript.GetInstance();
 		RankManager.RankEntry rankEntry = RankManager.Instance.FindRank(instance.DeckManager.GetHighestLeaderRank());
 		if (rankEntry != null)

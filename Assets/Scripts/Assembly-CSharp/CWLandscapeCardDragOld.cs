@@ -89,39 +89,31 @@ public class CWLandscapeCardDragOld : MonoBehaviour
 	private void PlaceLandscape()
 	{
 		FollowFinger = false;
-		if ((double)Input.mousePosition.y < (double)Screen.height * 0.5)
+		int landscapeLane = GetLandscapeLane(Input.mousePosition);
+		if (landscapeLane < 0)
 		{
 			ReturnCard();
 			return;
 		}
-		float[] array = new float[4] { 0.25f, 0.5f, 0.75f, 1f };
 		base.transform.localPosition = new Vector3(StartPosition.x, StartPosition.y - 525f, StartPosition.z);
 		SLOTGameSingleton<SLOTAudioManager>.GetInstance().PlaySound(audioMgr.GetComponent<AudioSource>(), SummonSound, true, false, SLOTAudioManager.AudioType.SFX);
 		SLOTGameSingleton<SLOTAudioManager>.GetInstance().PlaySound(audioMgr.GetComponent<AudioSource>(), PlaceCardSounds[KFFRandom.GetRandomIndex(PlaceCardSounds.Length)], true, false, SLOTAudioManager.AudioType.SFX);
 		bool flag = false;
-		for (int i = 0; i < 4; i++)
+		if (GameInstance.GetLandscapeType(PlayerType.User, landscapeLane) == LandscapeType.None)
 		{
-			if (!(Input.mousePosition.x < (float)Screen.width * array[i]))
+			GameInstance.SetLandscape(PlayerType.User, landscapeLane, CurrentType);
+			landscapeMgr.UpdateLandscapes();
+			landscapeMgr.populatedLandscapeCount++;
+			if (landscapeMgr.populatedLandscapeCount == 4)
 			{
-				continue;
+				landscapeMgr.ReadyButton.SendMessage("OnClick", SendMessageOptions.DontRequireReceiver);
+				TutorialMonitor.Instance.TriggerTutorial(TutorialTrigger.StartBottleSpin);
 			}
-			if (GameInstance.GetLandscapeType(PlayerType.User, i) == LandscapeType.None)
-			{
-				GameInstance.SetLandscape(PlayerType.User, i, CurrentType);
-				landscapeMgr.UpdateLandscapes();
-				landscapeMgr.populatedLandscapeCount++;
-				if (landscapeMgr.populatedLandscapeCount == 4)
-				{
-					landscapeMgr.ReadyButton.SendMessage("OnClick", SendMessageOptions.DontRequireReceiver);
-					TutorialMonitor.Instance.TriggerTutorial(TutorialTrigger.StartBottleSpin);
-				}
-				flag = true;
-			}
-			else
-			{
-				base.transform.localPosition = new Vector3(StartPosition.x, StartPosition.y, StartPosition.z);
-			}
-			break;
+			flag = true;
+		}
+		else
+		{
+			base.transform.localPosition = new Vector3(StartPosition.x, StartPosition.y, StartPosition.z);
 		}
 		if (flag)
 		{
@@ -131,6 +123,43 @@ public class CWLandscapeCardDragOld : MonoBehaviour
 		{
 			ReturnCard();
 		}
+	}
+
+	private int GetLandscapeLane(Vector2 screenPosition)
+	{
+		CWPlayerHandsController instance = CWPlayerHandsController.GetInstance();
+		if (instance != null && instance.laneColliders != null && instance.laneColliders.Length >= 4)
+		{
+			for (int i = 0; i < 4; i++)
+			{
+				BoxCollider boxCollider = instance.laneColliders[i];
+				if (boxCollider != null && CheckReleasePoint(screenPosition, boxCollider))
+				{
+					return i;
+				}
+			}
+			return -1;
+		}
+		if (screenPosition.y < (float)Screen.height * 0.5f)
+		{
+			return -1;
+		}
+		return Mathf.Clamp(Mathf.FloorToInt(screenPosition.x / ((float)Screen.width * 0.25f)), 0, 3);
+	}
+
+	private bool CheckReleasePoint(Vector2 screenPosition, BoxCollider laneCollider)
+	{
+		bool enabled = laneCollider.enabled;
+		laneCollider.enabled = true;
+		Vector3 farRight = new Vector3(laneCollider.bounds.max.x, 0f, laneCollider.bounds.min.z);
+		Vector3 nearRight = new Vector3(laneCollider.bounds.max.x, 0f, laneCollider.bounds.max.z);
+		Vector3 farLeft = new Vector3(laneCollider.bounds.min.x, 0f, laneCollider.bounds.min.z);
+		Vector3 nearLeft = new Vector3(laneCollider.bounds.min.x, 0f, laneCollider.bounds.max.z);
+		Vector3 rightEdge = Vector3.Lerp(GameCamera.WorldToScreenPoint(farRight), GameCamera.WorldToScreenPoint(farLeft), 0.5f);
+		Vector3 leftEdge = Vector3.Lerp(GameCamera.WorldToScreenPoint(nearRight), GameCamera.WorldToScreenPoint(nearLeft), 0.5f);
+		Vector3 nearEdge = GameCamera.WorldToScreenPoint(laneCollider.bounds.min);
+		laneCollider.enabled = enabled;
+		return screenPosition.x <= rightEdge.x && screenPosition.x >= leftEdge.x && screenPosition.y >= nearEdge.y;
 	}
 
 	private IEnumerator PlayFadingTweens()

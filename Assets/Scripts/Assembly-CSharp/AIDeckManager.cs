@@ -132,6 +132,11 @@ public class AIDeckManager : ILoadable
 
 	public Deck GetMPDeck(string[] aLandscapes, string[] aCards, string aLeader, int aRank)
 	{
+		return GetMPDeck(aLandscapes, aCards, null, aLeader, aRank);
+	}
+
+	public Deck GetMPDeck(string[] aLandscapes, string[] aCards, int[] aCardLevels, string aLeader, int aRank)
+	{
 		Deck deck = new Deck();
 		deck.Name = "MP_Deck";
 		deck.Leader = LeaderManager.Instance.CreateLeader(aLeader, aRank);
@@ -139,7 +144,8 @@ public class AIDeckManager : ILoadable
 		for (int i = 0; i < num; i++)
 		{
 			CardForm card = CardDataManager.Instance.GetCard(aCards[i]);
-			CardItem newCard = new CardItem(card);
+			int level = ((aCardLevels != null && i < aCardLevels.Length) ? aCardLevels[i] : 1);
+			CardItem newCard = new CardItem(card, level);
 			deck.AddCard(newCard);
 		}
 		num = aLandscapes.Length;

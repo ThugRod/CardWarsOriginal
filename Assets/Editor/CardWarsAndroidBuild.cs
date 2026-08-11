@@ -8,7 +8,7 @@ using UnityEngine;
 
 public static class CardWarsAndroidBuild
 {
-	private const string OutputPath = "Builds/Android/CardWars-ARM64-Unlocked.apk";
+	private const string OutputPath = "Builds/Android/CardWars-ARM64-Unlocked-LAN.apk";
 
 	public static void BuildApk()
 	{

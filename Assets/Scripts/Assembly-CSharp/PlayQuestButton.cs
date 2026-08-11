@@ -120,6 +120,14 @@ public class PlayQuestButton : AsyncData<string>
 		if (GlobalFlags.Instance.InMPMode && Asyncdata.processed)
 		{
 			CWMPMapController.MPData mLastMPData = CWMPMapController.GetInstance().mLastMPData;
+			if (LanRealtimeManager.IsConnected && LanRealtimeManager.Instance.PeerProfile != null)
+			{
+				LanRealtimeManager.Instance.ApplyPeerProfileToLegacyState();
+				HeartAnimation();
+				component.audioClip = cwQuestLoad.okSound;
+				GlobalFlags.Instance.enableMapDrag = true;
+				return;
+			}
 			int num = 0;
 			string leader = "Leader_Jake";
 			if (CWDeckController.GetInstance() != null)

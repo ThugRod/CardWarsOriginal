@@ -8,6 +8,8 @@ public class CWMPMapController : MonoBehaviour
 
 		public string[] mCards;
 
+		public int[] mCardLevels;
+
 		public string OpponentLeader;
 
 		public int mLeaderLevel;
