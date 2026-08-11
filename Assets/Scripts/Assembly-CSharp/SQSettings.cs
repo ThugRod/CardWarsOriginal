@@ -113,6 +113,7 @@ public class SQSettings
 	{
 	}
 
+	#if UNITY_IOS && !UNITY_EDITOR
 	[DllImport("__Internal")]
 	private static extern string getBundleIdentifier();
 
@@ -121,6 +122,22 @@ public class SQSettings
 
 	[DllImport("__Internal")]
 	private static extern string getCFBundleShortVersion();
+	#else
+	private static string getBundleIdentifier()
+	{
+		return Application.identifier;
+	}
+
+	private static string getCFBundleVersion()
+	{
+		return Application.version;
+	}
+
+	private static string getCFBundleShortVersion()
+	{
+		return Application.version;
+	}
+	#endif
 
 	private static string getJsonPath(string filePath)
 	{

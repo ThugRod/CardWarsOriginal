@@ -407,11 +407,16 @@ public class PlayerInfoScript : MonoBehaviour
 	{
 		get
 		{
-			return decryptValue(mCoins);
+			int num = decryptValue(mCoins);
+			return (!CardWarsModSettings.InfiniteCoins) ? num : Math.Max(num, CardWarsModSettings.InfiniteCoinBalance);
 		}
 		set
 		{
 			value = Math.Max(0, value);
+			if (CardWarsModSettings.InfiniteCoins)
+			{
+				value = Math.Max(value, CardWarsModSettings.InfiniteCoinBalance);
+			}
 			int num = decryptValue(mCoins);
 			int num2 = value - num;
 			int num3 = decryptValue(mCoinsAccumulated);
@@ -594,6 +599,10 @@ public class PlayerInfoScript : MonoBehaviour
 
 	public bool IsRegionLocked(string mapQuestType, int regionID)
 	{
+		if (CardWarsModSettings.AllContentUnlocked)
+		{
+			return false;
+		}
 		try
 		{
 			return !UnlockedRegions[mapQuestType].Contains(regionID);
@@ -2419,6 +2428,7 @@ public class PlayerInfoScript : MonoBehaviour
 	public static void Load()
 	{
 		g_playerInfoScript.Initialize();
+		CardWarsMod.Apply(g_playerInfoScript);
 	}
 
 	private string GetDefaultGameStateJson()

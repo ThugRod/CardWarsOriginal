@@ -459,13 +459,25 @@ public class PlayerDeckManager
 
 	public void DebugAddAllCards()
 	{
+		UnlockAllCards();
+	}
+
+	public int UnlockAllCards()
+	{
+		int num = 0;
 		List<CardForm> cards = CardDataManager.Instance.GetCards();
 		foreach (CardForm item in cards)
 		{
-			CardItem card = new CardItem(item);
-			AddCard(card);
+			if (!HasCard(item.ID))
+			{
+				CardItem card = new CardItem(item);
+				AddCard(card);
+				num++;
+			}
 		}
-		PlayerInfoScript.GetInstance().MaxInventory = Inventory.Count + 25;
+		PlayerInfoScript instance = PlayerInfoScript.GetInstance();
+		instance.MaxInventory = Math.Max(instance.MaxInventory, Inventory.Count + 25);
+		return num;
 	}
 
 	private string SerializeDeck(int ix)
