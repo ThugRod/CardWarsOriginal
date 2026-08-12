@@ -22,6 +22,11 @@ public static class CardWarsAndroidBuild
 		PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel22;
 		PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
 		PlayerSettings.Android.useCustomKeystore = false;
+		PlayerSettings.defaultInterfaceOrientation = UIOrientation.AutoRotation;
+		PlayerSettings.allowedAutorotateToLandscapeLeft = true;
+		PlayerSettings.allowedAutorotateToLandscapeRight = true;
+		PlayerSettings.allowedAutorotateToPortrait = false;
+		PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
 
 		string[] scenes = EditorBuildSettings.scenes
 			.Where(scene => scene.enabled)

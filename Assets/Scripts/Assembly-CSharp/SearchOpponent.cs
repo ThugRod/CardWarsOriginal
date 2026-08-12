@@ -28,52 +28,38 @@ public class SearchOpponent : AsyncData<MatchData>
 
 	private void Start()
 	{
-		PlayerInfoScript instance = PlayerInfoScript.GetInstance();
-		CostValue.text = RankManager.Instance.FindRank(instance.DeckManager.GetHighestLeaderRank()).PVPSearchCostCoins.ToString();
+		if ((bool)CostValue)
+		{
+			CostValue.text = "0";
+		}
 	}
 
 	private void OnClick()
 	{
-		if (LanRealtimeManager.IsConnected && LanRealtimeManager.Instance.PeerProfile != null)
+		if (LanRealtimeManager.Instance != null)
 		{
-			LanRealtimeManager.Instance.ApplyPeerProfileToLegacyState();
-			MatchData lanMatch = LanRealtimeManager.Instance.CreateLegacyMatchData();
-			if ((bool)refreshMatch && lanMatch != null)
-			{
-				refreshMatch.RefreshValues(lanMatch);
-			}
-			if ((bool)GoButton)
-			{
-				GoButton.SetActive(true);
-			}
+			LanRealtimeManager.Instance.ShowLobby(OnLanPeerReady);
 			UICamera.UnlockInput();
+		}
+	}
+
+	private void OnLanPeerReady()
+	{
+		if (!LanRealtimeManager.IsConnected || LanRealtimeManager.Instance.PeerProfile == null)
+		{
 			return;
 		}
-		PlayerInfoScript instance = PlayerInfoScript.GetInstance();
-		RankManager.RankEntry rankEntry = RankManager.Instance.FindRank(instance.DeckManager.GetHighestLeaderRank());
-		if (rankEntry != null)
+		LanRealtimeManager.Instance.ApplyPeerProfileToLegacyState();
+		MatchData lanMatch = LanRealtimeManager.Instance.CreateLegacyMatchData();
+		if ((bool)refreshMatch && lanMatch != null)
 		{
-			SearchFeesCoins = RankManager.Instance.FindRank(instance.DeckManager.GetHighestLeaderRank()).PVPSearchCostCoins;
-			SearchFeesGems = RankManager.Instance.FindRank(instance.DeckManager.GetHighestLeaderRank()).PVPSearchCostGems;
+			refreshMatch.RefreshValues(lanMatch);
 		}
-		else
+		if ((bool)GoButton)
 		{
-			SearchFeesCoins = 1;
-			SearchFeesGems = 1;
+			GoButton.SetActive(true);
 		}
-		if (instance.Coins < SearchFeesCoins && (bool)NotEnoughMoney)
-		{
-			NotEnoughMoney.Play(true);
-		}
-		else if (Asyncdata.processed)
-		{
-			if ((bool)SearchStatus)
-			{
-				SearchStatus.Play(true);
-			}
-			StartCoroutine("SearchTimer");
-			global::Multiplayer.Multiplayer.MatchMake(SessionManager.GetInstance().theSession, instance.DeckManager.GetHighestLeaderRank(), MatchDataCallback);
-		}
+		UICamera.UnlockInput();
 	}
 
 	private IEnumerator SearchTimer()

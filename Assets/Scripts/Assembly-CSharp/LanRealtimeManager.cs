@@ -59,6 +59,14 @@ public class LanRealtimeManager : MonoBehaviour
 	{
 		get { return Instance != null && Instance.State == ConnectionState.Connected; }
 	}
+	public static bool IsLanMatch
+	{
+		get
+		{
+			CWMPMapController controller = CWMPMapController.GetInstance();
+			return controller != null && controller.mLastMPData != null && !string.IsNullOrEmpty(controller.mLastMPData.mMatchID) && controller.mLastMPData.mMatchID.StartsWith("LAN-", StringComparison.Ordinal);
+		}
+	}
 
 	public ConnectionState State
 	{
@@ -83,6 +91,7 @@ public class LanRealtimeManager : MonoBehaviour
 	private readonly object writerLock = new object();
 	private readonly ConcurrentQueue<string> incoming = new ConcurrentQueue<string>();
 	private readonly ConcurrentQueue<string> notices = new ConcurrentQueue<string>();
+	private Action peerReadyCallback;
 	private string joinAddress = "192.168.1.2";
 	private bool lobbyVisible;
 	private int nextSequence = 1;
@@ -92,6 +101,8 @@ public class LanRealtimeManager : MonoBehaviour
 	private GUIStyle buttonStyle;
 	private GUIStyle fieldStyle;
 	private GUIStyle boxStyle;
+	private int styledScreenWidth;
+	private int styledScreenHeight;
 
 	[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
 	private static void Bootstrap()
@@ -115,6 +126,27 @@ public class LanRealtimeManager : MonoBehaviour
 		Instance = this;
 		DontDestroyOnLoad(base.gameObject);
 		SetState(ConnectionState.Disconnected, "Sin conexión LAN");
+	}
+
+	public void ShowLobby(Action onPeerReady)
+	{
+		peerReadyCallback = onPeerReady;
+		lobbyVisible = true;
+		if (IsConnected && PeerProfile != null)
+		{
+			NotifyPeerReady();
+		}
+	}
+
+	private void NotifyPeerReady()
+	{
+		Action callback = peerReadyCallback;
+		peerReadyCallback = null;
+		lobbyVisible = false;
+		if (callback != null)
+		{
+			callback();
+		}
 	}
 
 	public void Host()
@@ -367,6 +399,7 @@ public class LanRealtimeManager : MonoBehaviour
 			if (PeerProfile != null)
 			{
 				SetState(ConnectionState.Connected, "Listo contra " + PeerProfile.playerName);
+				NotifyPeerReady();
 			}
 		}
 		else if (wirePacket.type == "ping")
@@ -502,46 +535,58 @@ public class LanRealtimeManager : MonoBehaviour
 
 	private void EnsureStyles()
 	{
-		if (titleStyle != null)
+		if (titleStyle == null)
+		{
+			titleStyle = new GUIStyle(GUI.skin.label);
+			titleStyle.alignment = TextAnchor.MiddleCenter;
+			titleStyle.normal.textColor = Color.white;
+			labelStyle = new GUIStyle(GUI.skin.label);
+			labelStyle.wordWrap = true;
+			labelStyle.normal.textColor = Color.white;
+			buttonStyle = new GUIStyle(GUI.skin.button);
+			fieldStyle = new GUIStyle(GUI.skin.textField);
+			boxStyle = new GUIStyle(GUI.skin.box);
+		}
+		if (styledScreenWidth == Screen.width && styledScreenHeight == Screen.height)
 		{
 			return;
 		}
-		int fontSize = Mathf.Max(18, Mathf.RoundToInt(Screen.height * 0.03f));
-		titleStyle = new GUIStyle(GUI.skin.label);
+		styledScreenWidth = Screen.width;
+		styledScreenHeight = Screen.height;
+		int fontSize = Mathf.Clamp(Mathf.RoundToInt(Screen.height * 0.035f), 20, 38);
 		titleStyle.fontSize = fontSize + 4;
-		titleStyle.alignment = TextAnchor.MiddleCenter;
-		titleStyle.normal.textColor = Color.white;
-		labelStyle = new GUIStyle(GUI.skin.label);
 		labelStyle.fontSize = fontSize;
-		labelStyle.wordWrap = true;
-		labelStyle.normal.textColor = Color.white;
-		buttonStyle = new GUIStyle(GUI.skin.button);
 		buttonStyle.fontSize = fontSize;
-		fieldStyle = new GUIStyle(GUI.skin.textField);
 		fieldStyle.fontSize = fontSize;
-		boxStyle = new GUIStyle(GUI.skin.box);
+	}
+
+	private static Rect GetGuiSafeArea()
+	{
+		Rect safeArea = Screen.safeArea;
+		return new Rect(safeArea.x, Screen.height - safeArea.yMax, safeArea.width, safeArea.height);
 	}
 
 	private void OnGUI()
 	{
+		GUI.depth = -10000;
+		GUI.enabled = true;
+		GUI.color = Color.white;
+		GUI.contentColor = Color.white;
+		GUI.backgroundColor = Color.white;
+		GUI.matrix = Matrix4x4.identity;
 		EnsureStyles();
-		float margin = Screen.width * 0.02f;
-		float buttonWidth = Mathf.Max(120f, Screen.width * 0.12f);
-		float buttonHeight = Mathf.Max(52f, Screen.height * 0.075f);
+		Rect safeArea = GetGuiSafeArea();
+		float buttonHeight = Mathf.Clamp(safeArea.height * 0.12f, 70f, 120f);
 		if (!lobbyVisible)
 		{
-			if (GUI.Button(new Rect(Screen.width - buttonWidth - margin, margin, buttonWidth, buttonHeight), "LAN", buttonStyle))
-			{
-				lobbyVisible = true;
-			}
 			return;
 		}
-		float width = Mathf.Min(Screen.width * 0.82f, 900f);
-		float height = Mathf.Min(Screen.height * 0.82f, 650f);
-		Rect panel = new Rect((Screen.width - width) * 0.5f, (Screen.height - height) * 0.5f, width, height);
+		float width = Mathf.Min(safeArea.width * 0.9f, 1000f);
+		float height = Mathf.Min(safeArea.height * 0.9f, 700f);
+		Rect panel = new Rect(safeArea.x + (safeArea.width - width) * 0.5f, safeArea.y + (safeArea.height - height) * 0.5f, width, height);
 		GUI.Box(panel, string.Empty, boxStyle);
 		GUILayout.BeginArea(new Rect(panel.x + 24f, panel.y + 18f, panel.width - 48f, panel.height - 36f));
-		GUILayout.Label("Card Wars LAN en tiempo real", titleStyle, GUILayout.Height(buttonHeight));
+		GUILayout.Label("Card Wars Online local", titleStyle, GUILayout.Height(buttonHeight));
 		GUILayout.Label(StatusText + ((State == ConnectionState.Connected) ? "  Ping: " + PingMilliseconds + " ms" : string.Empty), labelStyle);
 		GUILayout.Space(12f);
 		GUILayout.Label("IP del anfitrión: " + GetLocalIPv4() + "   Puerto: " + Port, labelStyle);

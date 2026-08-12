@@ -10,7 +10,10 @@ public class CWPlayerLose : AsyncData<string>
 	{
 		if (GlobalFlags.Instance.InMPMode && Asyncdata.processed)
 		{
-			global::Multiplayer.Multiplayer.MatchFinish(SessionManager.GetInstance().theSession, CWMPMapController.GetInstance().mLastMPData.mMatchID, true, StringCallback);
+			if (!LanRealtimeManager.IsLanMatch)
+			{
+				global::Multiplayer.Multiplayer.MatchFinish(SessionManager.GetInstance().theSession, CWMPMapController.GetInstance().mLastMPData.mMatchID, true, StringCallback);
+			}
 		}
 	}
 

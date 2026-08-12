@@ -77,7 +77,10 @@ public class CWBattleEndRewardWinner : AsyncData<string>
 		{
 			if (instance.InMPMode && Asyncdata.processed)
 			{
-				global::Multiplayer.Multiplayer.MatchFinish(SessionManager.GetInstance().theSession, CWMPMapController.GetInstance().mLastMPData.mMatchID, false, StringCallback);
+				if (!LanRealtimeManager.IsLanMatch)
+				{
+					global::Multiplayer.Multiplayer.MatchFinish(SessionManager.GetInstance().theSession, CWMPMapController.GetInstance().mLastMPData.mMatchID, false, StringCallback);
+				}
 				if ((bool)TrophyEarned)
 				{
 					TrophyEarned.text = instance2.MPWinTrophies.ToString();
