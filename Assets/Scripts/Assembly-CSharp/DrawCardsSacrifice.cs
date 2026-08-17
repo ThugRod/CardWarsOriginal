@@ -4,7 +4,7 @@ public class DrawCardsSacrifice : CreatureScript
 {
 	public override bool CanFloop()
 	{
-		if (base.GameInstance.GetCardsInHand(base.Owner) < 7 && base.GameInstance.GetDeck(base.Owner).CardCount() > 0)
+		if (base.GameInstance.GetCardsInHand(base.Owner) < BattleModeRules.MaxHandSize && base.GameInstance.GetDeck(base.Owner).CardCount() > 0)
 		{
 			return true;
 		}
@@ -17,7 +17,7 @@ public class DrawCardsSacrifice : CreatureScript
 		CardScript.LaneMods[(int)base.Owner, base.CurrentLane.Index].DEF = -base.Health;
 		CardScript.APMods[(int)base.Owner] = -DetermineFloopCost();
 		int num = CardScript.ScoreBoard(base.Owner);
-		int num2 = Math.Min(7 - base.GameInstance.GetCardsInHand(base.Owner), base.Data.Val1);
+		int num2 = Math.Min(BattleModeRules.MaxHandSize - base.GameInstance.GetCardsInHand(base.Owner), base.Data.Val1);
 		return num + num2 * 3;
 	}
 

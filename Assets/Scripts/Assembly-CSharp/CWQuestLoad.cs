@@ -158,7 +158,16 @@ public class CWQuestLoad : MonoBehaviour
 		QuestData qd = pinfo.GetCurrentQuest();
 		if (GlobalFlags.Instance.InMPMode)
 		{
-			int questToLoad = (pinfo.CurrentMPQuest = ((pinfo.NumMPGamesPlayed >= 2) ? Random.Range(0, QuestManager.Instance.MPquests.Count - 1) : (pinfo.NumMPGamesPlayed + 8)));
+			int questToLoad;
+			if (LanRealtimeManager.IsConnected && LanRealtimeManager.IsLanMatch)
+			{
+				questToLoad = LanRealtimeManager.Instance.GetSynchronizedQuestIndex(QuestManager.Instance.MPquests.Count);
+			}
+			else
+			{
+				questToLoad = ((pinfo.NumMPGamesPlayed >= 2) ? Random.Range(0, QuestManager.Instance.MPquests.Count - 1) : (pinfo.NumMPGamesPlayed + 8));
+			}
+			pinfo.CurrentMPQuest = questToLoad;
 			qd = QuestManager.Instance.GetMPQuest(questToLoad);
 		}
 		if (!CanStartQuest())

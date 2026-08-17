@@ -5,7 +5,7 @@ public class DrawCardsSpell : SpellScript
 		bool flag = CardScript.CanPlay(player, lane, card);
 		if (flag)
 		{
-			if (GameState.Instance.GetDeck(player).CardCount() > 0 && GameState.Instance.GetCardsInHand(player) < 7)
+			if (GameState.Instance.GetDeck(player).CardCount() > 0 && GameState.Instance.GetCardsInHand(player) < BattleModeRules.MaxHandSize)
 			{
 				return true;
 			}

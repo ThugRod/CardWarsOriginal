@@ -22,6 +22,7 @@ public class CWQuestMapButton : MonoBehaviour
 		{
 			return;
 		}
+		BattleModeRules.UseNormalMode();
 		GlobalFlags instance = GlobalFlags.Instance;
 		instance.InMPMode = false;
 		instance.BattleResult = null;

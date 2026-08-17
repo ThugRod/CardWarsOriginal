@@ -117,6 +117,10 @@ public class CWFloopActionManager : MonoBehaviour
 
 	public IEnumerator PlayFloopAction()
 	{
+		if (player == (int)PlayerType.User && LanRealtimeManager.IsRealtimeBattle && !LanRealtimeManager.Instance.IsApplyingRemoteAction)
+		{
+			LanRealtimeManager.Instance.ReportFloop(lane, CardType.Creature);
+		}
 		GameObject target = creatureMgr.Spawn_Points[player, lane, 0].gameObject;
 		FillFloopInfo();
 		FloopCameraTrigger(target, false);

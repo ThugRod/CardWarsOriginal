@@ -6,7 +6,7 @@ public class DamageAndTakeCard : CreatureScript
 
 	public override bool CanFloop()
 	{
-		return base.GameInstance.GetCardsInHand(base.Owner) < 7 && GameState.Instance.LaneHasCreature(!base.Owner, base.CurrentLane.OpponentLane.Index);
+		return base.GameInstance.GetCardsInHand(base.Owner) < BattleModeRules.MaxHandSize && GameState.Instance.LaneHasCreature(!base.Owner, base.CurrentLane.OpponentLane.Index);
 	}
 
 	public override void Floop()

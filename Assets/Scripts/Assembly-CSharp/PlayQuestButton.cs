@@ -111,6 +111,10 @@ public class PlayQuestButton : AsyncData<string>
 
 	private void OnClick()
 	{
+		if (!enabled)
+		{
+			return;
+		}
 		UIButtonSound component = GetComponent<UIButtonSound>();
 		if (cwQuestLoad != null && !cwQuestLoad.CanStartQuest())
 		{
@@ -119,7 +123,7 @@ public class PlayQuestButton : AsyncData<string>
 		}
 		if (GlobalFlags.Instance.InMPMode && Asyncdata.processed)
 		{
-			if (LanRealtimeManager.IsConnected && LanRealtimeManager.Instance.PeerProfile != null)
+			if (LanRealtimeManager.IsLanMatch && LanRealtimeManager.Instance.PeerProfile != null)
 			{
 				LanRealtimeManager.Instance.ApplyPeerProfileToLegacyState();
 				HeartAnimation();

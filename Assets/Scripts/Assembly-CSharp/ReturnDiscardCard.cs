@@ -6,7 +6,7 @@ public class ReturnDiscardCard : CreatureScript
 
 	public override bool CanFloop()
 	{
-		if (base.GameInstance.GetCardsInHand(base.Owner) >= 7)
+		if (base.GameInstance.GetCardsInHand(base.Owner) >= BattleModeRules.MaxHandSize)
 		{
 			return false;
 		}

@@ -20,7 +20,9 @@ public static class CardWarsAndroidBuild
 		PlayerSettings.SetScriptingBackend(BuildTargetGroup.Android, ScriptingImplementation.IL2CPP);
 		PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
 		PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel22;
-		PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
+		// SDK 36 keeps LAN access compatible on Android 17 through the legacy
+		// INTERNET grant. Targeting SDK 37 requires ACCESS_LOCAL_NETWORK at runtime.
+		PlayerSettings.Android.targetSdkVersion = (AndroidSdkVersions)36;
 		PlayerSettings.Android.useCustomKeystore = false;
 		PlayerSettings.defaultInterfaceOrientation = UIOrientation.AutoRotation;
 		PlayerSettings.allowedAutorotateToLandscapeLeft = true;

@@ -68,6 +68,7 @@ public class CWBattleEndPlayerStats : MonoBehaviour
 
 	private void Initialize()
 	{
+		CardWarsMod.EnsureInfiniteStamina(pInfo);
 		int stamina_Max = pInfo.Stamina_Max;
 		int stamina = pInfo.Stamina;
 		staminaBar.fillAmount = stamina / stamina_Max;
@@ -80,6 +81,12 @@ public class CWBattleEndPlayerStats : MonoBehaviour
 		else
 		{
 			staminaTimer.text = KFFLocalization.Get("!!G_STAMINA_FULL");
+		}
+		if (CardWarsModSettings.InfiniteStamina)
+		{
+			staminaBar.fillAmount = 1f;
+			staminaLabel.text = "∞/∞";
+			staminaTimer.text = "Ilimitado";
 		}
 		try
 		{

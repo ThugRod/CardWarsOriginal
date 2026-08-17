@@ -281,7 +281,7 @@ public class CWBattleSequenceController : MonoBehaviour
 						forceCrit = false;
 					}
 				}
-				if (PlayerInfoScript.GetInstance().AutoBattleSetting)
+				if (PlayerInfoScript.GetInstance().AutoBattleSetting && !LanRealtimeManager.IsRealtimeBattle)
 				{
 					result = ((phaseMgr.Phase != BattlePhase.P1Battle) ? "Miss" : "Hit");
 					UpdateBattleCamera();
@@ -315,7 +315,11 @@ public class CWBattleSequenceController : MonoBehaviour
 		leaderForm = GameInstance.GetDeck(PlayerType.User).Leader.Form;
 		SetUpRing(leaderForm, lane);
 		yield return new WaitForSeconds(1f);
-		if (forceMiss || forceCrit)
+		if (LanRealtimeManager.IsRealtimeBattle && phaseMgr.Phase == BattlePhase.P2Battle)
+		{
+			yield return StartCoroutine(PlayRemoteRingResult());
+		}
+		else if (forceMiss || forceCrit)
 		{
 			yield return StartCoroutine(StopRing());
 		}
@@ -331,6 +335,25 @@ public class CWBattleSequenceController : MonoBehaviour
 		{
 			tapDelegate.disableFlag = false;
 		}
+	}
+
+	private IEnumerator PlayRemoteRingResult()
+	{
+		string remoteResult = null;
+		yield return StartCoroutine(LanRealtimeManager.Instance.WaitForRemoteBattleResult(lane, delegate(string value)
+		{
+			remoteResult = value;
+		}));
+		Time.timeScale = 1f;
+		_keyPressed = true;
+		result = ((remoteResult == "Miss") ? "Hit" : "Miss");
+		GetTweenTarget(result).SendMessage("OnClick", SendMessageOptions.DontRequireReceiver);
+		animateFlag = false;
+		yield return new WaitForSeconds(0.3f);
+		GetComponent<AudioSource>().Stop();
+		awayTweenTarget.SendMessage("OnClick", SendMessageOptions.DontRequireReceiver);
+		yield return new WaitForSeconds(0.2f);
+		yield return StartCoroutine(BattleAction());
 	}
 
 	private IEnumerator WaitForKeyPress()
@@ -523,6 +546,10 @@ public class CWBattleSequenceController : MonoBehaviour
 		{
 			result = "Miss";
 		}
+		if (LanRealtimeManager.IsRealtimeBattle && phaseMgr.Phase == BattlePhase.P1Battle)
+		{
+			LanRealtimeManager.Instance.ReportBattleResult(lane, result);
+		}
 		GetTweenTarget(result).SendMessage("OnClick", SendMessageOptions.DontRequireReceiver);
 		animateFlag = false;
 		yield return new WaitForSeconds(0.3f);
@@ -583,6 +610,17 @@ public class CWBattleSequenceController : MonoBehaviour
 			}
 		}
 		yield return new WaitForSeconds(0.5f);
+		if (LanRealtimeManager.IsRealtimeBattle)
+		{
+			if (phaseMgr.Phase == BattlePhase.P1Battle)
+			{
+				LanRealtimeManager.Instance.ReportBattleState(lane);
+			}
+			else if (phaseMgr.Phase == BattlePhase.P2Battle)
+			{
+				yield return StartCoroutine(LanRealtimeManager.Instance.WaitAndApplyRemoteBattleState(lane));
+			}
+		}
 		if (GameInstance.GetHealth(!player) == 0)
 		{
 			yield return StartCoroutine(BattleEnd(true));

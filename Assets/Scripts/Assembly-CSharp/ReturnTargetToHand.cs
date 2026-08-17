@@ -71,7 +71,7 @@ public class ReturnTargetToHand : CreatureScript
 	public override bool DoResult(CardScript target)
 	{
 		base.GameInstance.RemoveCardFromPlay(target.Owner, target.CurrentLane.Index, target.Data.Form.Type);
-		if (base.GameInstance.GetCardsInHand(target.Owner) < 7)
+		if (base.GameInstance.GetCardsInHand(target.Owner) < BattleModeRules.MaxHandSize)
 		{
 			base.GameInstance.PlaceCardInHand(target.Owner, target.Data);
 		}

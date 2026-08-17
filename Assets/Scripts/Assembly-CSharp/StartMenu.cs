@@ -37,6 +37,10 @@ public class StartMenu : MonoBehaviour
 
 	private void OnGUI()
 	{
+		if (CardWarsProfileManager.IsMenuVisible)
+		{
+			return;
+		}
 		SampleUI.ApplyVirtualScreen();
 		GUILayout.BeginArea(screenRect);
 		GUILayout.BeginHorizontal();

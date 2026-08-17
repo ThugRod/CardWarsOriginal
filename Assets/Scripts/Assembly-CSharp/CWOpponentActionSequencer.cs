@@ -51,6 +51,17 @@ public class CWOpponentActionSequencer : MonoBehaviour
 
 	public IEnumerator StartOpponentSequence()
 	{
+		if (LanRealtimeManager.IsRealtimeBattle)
+		{
+			Debug.Log("LAN: esperando las acciones en vivo del jugador remoto; IA desactivada.");
+			yield return StartCoroutine(LanRealtimeManager.Instance.ExecuteRemoteOpponentTurn(this));
+			yield break;
+		}
+		if (GlobalFlags.Instance != null && GlobalFlags.Instance.InMPMode)
+		{
+			Debug.LogError("MULTIJUGADOR: la IA está desactivada. La partida queda esperando al jugador remoto.");
+			yield break;
+		}
 		Deck deck = GameInstance.GetDeck(PlayerType.Opponent);
 		bool AIReshuffle = GameInstance.ActiveQuest.AIReshuffle;
 		if (deck.CardCount() == 0 && AIReshuffle)
@@ -98,6 +109,69 @@ public class CWOpponentActionSequencer : MonoBehaviour
 		{
 			BattlePhaseManager.GetInstance().Phase = BattlePhase.P2BattleBanner;
 		}
+	}
+
+	public IEnumerator ExecuteRemoteCard(string cardId, int handIndex, int laneIndex)
+	{
+		phaseMgr.Phase = BattlePhase.P2Setup;
+		List<CardItem> hand = GameInstance.GetHand(PlayerType.Opponent);
+		CardItem remoteCard = null;
+		if (handIndex >= 0 && handIndex < hand.Count && hand[handIndex] != null && hand[handIndex].Form.ID == cardId)
+		{
+			remoteCard = hand[handIndex];
+		}
+		if (remoteCard == null)
+		{
+			for (int i = 0; i < hand.Count; i++)
+			{
+				if (hand[i] != null && hand[i].Form.ID == cardId)
+				{
+					remoteCard = hand[i];
+					break;
+				}
+			}
+		}
+		if (remoteCard == null)
+		{
+			Debug.LogError("LAN: la carta remota " + cardId + " no está en la mano sincronizada.");
+			yield break;
+		}
+		yield return StartCoroutine(PlayCardToLane(remoteCard, GameInstance.GetLane(PlayerType.Opponent, laneIndex)));
+	}
+
+	public IEnumerator ExecuteRemoteFloop(int laneIndex, CardType cardType)
+	{
+		phaseMgr.Phase = BattlePhase.P2Setup;
+		if (!GameInstance.LaneHasCard(PlayerType.Opponent, laneIndex, cardType))
+		{
+			Debug.LogError("LAN: no existe la carta remota que intentó hacer floop en el carril " + laneIndex + ".");
+			yield break;
+		}
+		if (floopPanelTween != null)
+		{
+			floopPanelTween.Play(true);
+		}
+		GameObject currentInstance = creatureMgr.Instances[(int)PlayerType.Opponent, laneIndex, (int)cardType];
+		floopActionMgr.anim = currentInstance == null ? null : currentInstance.GetComponent<Animation>();
+		floopActionMgr.lane = laneIndex;
+		floopActionMgr.card = GameInstance.GetCard(PlayerType.Opponent, laneIndex, cardType);
+		floopActionMgr.player = PlayerType.Opponent;
+		resumeFlag = false;
+		yield return StartCoroutine(floopActionMgr.PlayFloopAction());
+		while (!resumeFlag)
+		{
+			yield return null;
+		}
+	}
+
+	public IEnumerator ExecuteRemoteLeader()
+	{
+		yield return StartCoroutine(LeaderAction());
+	}
+
+	public void FinishRemoteTurn()
+	{
+		NextPhase();
 	}
 
 	private IEnumerator Reshuffle()

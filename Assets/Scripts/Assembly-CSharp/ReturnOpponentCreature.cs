@@ -76,7 +76,7 @@ public class ReturnOpponentCreature : SpellScript
 	public override bool DoResult(CardScript target)
 	{
 		base.GameInstance.RemoveCardFromPlay(!base.Owner, target.CurrentLane.Index, CardType.Creature);
-		if (base.GameInstance.GetCardsInHand(!base.Owner) < 7)
+		if (base.GameInstance.GetCardsInHand(!base.Owner) < BattleModeRules.MaxHandSize)
 		{
 			base.GameInstance.PlaceCardInHand(!base.Owner, target.Data);
 		}

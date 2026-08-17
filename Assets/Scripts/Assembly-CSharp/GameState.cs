@@ -278,7 +278,14 @@ public class GameState
 		}
 		else
 		{
-			SetHealth(playerDeckCopy.Leader.HP, opponentDeckCopy.Leader.HP);
+			if (BattleModeRules.IsTurbo)
+			{
+				SetHealth(BattleModeRules.TurboHeroHealth, BattleModeRules.TurboHeroHealth);
+			}
+			else
+			{
+				SetHealth(playerDeckCopy.Leader.HP, opponentDeckCopy.Leader.HP);
+			}
 		}
 		SetMinHealth(0, 0);
 		qd.XPRewarded = UnityEngine.Random.Range(qd.MinXP, qd.MaxXP);
@@ -357,6 +364,10 @@ public class GameState
 
 	public void UseLeaderAbility(PlayerType player)
 	{
+		if (LanRealtimeManager.IsRealtimeBattle)
+		{
+			LanRealtimeManager.Instance.ApplyCurrentActionSeed();
+		}
 		LeaderItem leader = GetLeader(player);
 		LeaderScript leaderScript = leader.InstanceScript() as LeaderScript;
 		leaderScript.Owner = player;
@@ -366,7 +377,7 @@ public class GameState
 		leaderScript.Data.Form.ScriptVizName = leader.Form.ScriptName;
 		leaderScript.Data.Form.RawDescription = leader.Description;
 		leaderScript.Cast();
-		LeaderCooldown[(int)player] = leader.Form.Cooldown;
+		LeaderCooldown[(int)player] = BattleModeRules.GetLeaderCooldown(leader.Form.Cooldown);
 		VOManager.Instance.PlayEvent(player, VOEvent.LeaderAbility);
 	}
 
@@ -396,11 +407,18 @@ public class GameState
 		CreatureManagerScript.GetInstance().SetupUniqueListForPool();
 		LandscapeManagerScript.GetInstance().PoolLandscape();
 		Deck deck2 = Decks[(int)PlayerType.User];
-		deck2.Shuffle();
+		if (LanRealtimeManager.IsRealtimeBattle)
+		{
+			LanRealtimeManager.Instance.ShuffleBattleDeck(deck2, PlayerType.User, false);
+		}
+		else
+		{
+			deck2.Shuffle();
+		}
 		Singleton<AnalyticsManager>.Instance.LogQuestStart();
 		Singleton<AnalyticsManager>.Instance.LogLeaderEquipped(deck2.Leader.Form.ID, deck2.Leader.Rank);
 		Singleton<AnalyticsManager>.Instance.LogDeckEquipped(deck2.GetCards());
-		LeaderCooldown[(int)PlayerType.User] = deck2.Leader.Form.Cooldown;
+		LeaderCooldown[(int)PlayerType.User] = BattleModeRules.GetLeaderCooldown(deck2.Leader.Form.Cooldown);
 		Hands[(int)PlayerType.User].Clear();
 		for (int i = 0; i < 5; i++)
 		{
@@ -409,9 +427,16 @@ public class GameState
 		}
 		SummonedCards[(int)PlayerType.User].Clear();
 		deck2 = Decks[(int)PlayerType.Opponent];
-		deck2.Shuffle();
-		deck2.ShuffleLandscapes();
-		LeaderCooldown[(int)PlayerType.Opponent] = deck2.Leader.Form.Cooldown;
+		if (LanRealtimeManager.IsRealtimeBattle)
+		{
+			LanRealtimeManager.Instance.ShuffleBattleDeck(deck2, PlayerType.Opponent, false);
+		}
+		else
+		{
+			deck2.Shuffle();
+			deck2.ShuffleLandscapes();
+		}
+		LeaderCooldown[(int)PlayerType.Opponent] = BattleModeRules.GetLeaderCooldown(deck2.Leader.Form.Cooldown);
 		StaticLootList.Clear();
 		Hands[(int)PlayerType.Opponent].Clear();
 		for (int j = 0; j < 5; j++)
@@ -467,7 +492,7 @@ public class GameState
 		}
 		ResetAreaModifiers();
 		ResetExtraMagicPoints();
-		CurrentMagicPoints = ParametersManager.Instance.Starting_Magic_Points;
+		CurrentMagicPoints = BattleModeRules.StartingMagic;
 		QuestConditionManager.Instance.ResetStats();
 	}
 
@@ -679,7 +704,7 @@ public class GameState
 	{
 		Deck deck = Decks[(int)player];
 		List<CardItem> list = Hands[(int)player];
-		if (list.Count >= 7 || deck.CardCount() <= 0)
+		if (list.Count >= BattleModeRules.MaxHandSize || deck.CardCount() <= 0)
 		{
 			return;
 		}
@@ -995,6 +1020,10 @@ public class GameState
 
 	public void CastSpell(PlayerType player, CardItem card)
 	{
+		if (LanRealtimeManager.IsRealtimeBattle)
+		{
+			LanRealtimeManager.Instance.ApplyCurrentActionSeed();
+		}
 		if (!Stealing)
 		{
 			int num = card.Form.DetermineCost(player);
@@ -1099,6 +1128,10 @@ public class GameState
 
 	public void DoResultSummon(PlayerType player, int lane, CardItem card)
 	{
+		if (LanRealtimeManager.IsRealtimeBattle)
+		{
+			LanRealtimeManager.Instance.ApplyCurrentActionSeed();
+		}
 		AddMagicPoints(player, -card.Form.DetermineCost(player), false);
 		RemoveCardFromHand(player, card);
 		Lane lane2 = Lanes[(int)player, lane];
@@ -1233,6 +1266,10 @@ public class GameState
 
 	public void FloopCard(PlayerType player, int lane, CardType type)
 	{
+		if (LanRealtimeManager.IsRealtimeBattle)
+		{
+			LanRealtimeManager.Instance.ApplyCurrentActionSeed();
+		}
 		CardScript cardScript = Lanes[(int)player, lane].Scripts[(int)type];
 		AddMagicPoints(player, -cardScript.DetermineFloopCost());
 		FloopCountTurn[(int)player]++;
@@ -1855,8 +1892,21 @@ public class GameState
 
 	public void SelectTarget(int idx)
 	{
+		if (LanRealtimeManager.IsRealtimeBattle && !LanRealtimeManager.Instance.IsApplyingRemoteAction)
+		{
+			LanRealtimeManager.Instance.ReportTarget(idx);
+		}
+		if (LanRealtimeManager.IsRealtimeBattle)
+		{
+			LanRealtimeManager.Instance.ApplyCurrentActionSeed();
+		}
 		Lane lane = GetLane(SelectionSide, idx);
 		TargetingListener.OnTargetSelected(lane);
+	}
+
+	public bool HasTargetingListener()
+	{
+		return TargetingListener != null;
 	}
 
 	public void ClearHighlights()
@@ -1885,6 +1935,10 @@ public class GameState
 
 	public void StartTurn(PlayerType player)
 	{
+		if (LanRealtimeManager.IsRealtimeBattle)
+		{
+			LanRealtimeManager.Instance.ApplyCurrentActionSeed();
+		}
 		SpellsCast[(int)player] = 0;
 		CreaturesSummoned[(int)player] = 0;
 		CreaturesRemoved[(int)player] = 0;
@@ -1986,12 +2040,16 @@ public class GameState
 
 	public void EndTurn(PlayerType player)
 	{
+		if (LanRealtimeManager.IsRealtimeBattle)
+		{
+			LanRealtimeManager.Instance.ApplyCurrentActionSeed();
+		}
 		if (GameData.FirstPlayer - 1 == (int)player)
 		{
-			CurrentMagicPoints++;
-			if (CurrentMagicPoints > ParametersManager.Instance.Max_Magic_Points)
+			CurrentMagicPoints += BattleModeRules.MagicPerRound;
+			if (CurrentMagicPoints > BattleModeRules.MaxMagic)
 			{
-				CurrentMagicPoints = ParametersManager.Instance.Max_Magic_Points;
+				CurrentMagicPoints = BattleModeRules.MaxMagic;
 			}
 		}
 		MagicPoints[(int)player] = CurrentMagicPoints + BonusPoints[(int)player];

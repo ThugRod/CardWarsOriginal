@@ -170,7 +170,7 @@ public class Game
 
 	public void SetPlayer(Player p)
 	{
-		gameFile = p.CacheFile("game.json");
+		gameFile = p.CacheFile(CardWarsProfileManager.GetActiveGameFileName());
 		player = p;
 	}
 
@@ -301,12 +301,12 @@ public class Game
 
 	public bool GameExists(Player p)
 	{
-		return File.Exists(p.CacheFile("game.json"));
+		return File.Exists(p.CacheFile(CardWarsProfileManager.GetActiveGameFileName()));
 	}
 
 	public void ClearCachedSaveState(Session session)
 	{
-		string text = session.ThePlayer.CacheFile("game.json");
+		string text = session.ThePlayer.CacheFile(CardWarsProfileManager.GetActiveGameFileName());
 		TFUtils.DebugLog("Clearing cached save state: " + text, "saveload");
 		TFUtils.DeleteFile(text);
 		session.WebFileServer.DeleteETagFile();

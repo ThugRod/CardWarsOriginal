@@ -79,6 +79,7 @@ public class CWPlayerHandsController : MonoBehaviour
 
 	private void Start()
 	{
+		EnsureHandCapacity();
 		cardMgr = CardManagerScript.GetInstance();
 		GameInstance = GameState.Instance;
 		panelMgrBattle = PanelManagerBattle.GetInstance();
@@ -110,7 +111,8 @@ public class CWPlayerHandsController : MonoBehaviour
 
 	public void UpdateCards(List<CardItem> cards)
 	{
-		for (int num = 6; num >= 0; num--)
+		EnsureHandCapacity();
+		for (int num = playerHands.Length - 1; num >= 0; num--)
 		{
 			if (num >= cards.Count)
 			{
@@ -150,6 +152,52 @@ public class CWPlayerHandsController : MonoBehaviour
 				PlayDrawTween(playerHands[num].gameObject, false);
 			}
 		}
+	}
+
+	private void EnsureHandCapacity()
+	{
+		int maxHandSize = BattleModeRules.MaxHandSize;
+		if (playerHands == null || playerHands.Length == 0 || playerHands.Length >= maxHandSize)
+		{
+			return;
+		}
+		List<GameObject> handSlots = new List<GameObject>(playerHands);
+		GameObject template = handSlots[handSlots.Count - 1];
+		Vector3 slotStep = handSlots.Count > 1 ? template.transform.localPosition - handSlots[handSlots.Count - 2].transform.localPosition : new Vector3(150f, 0f, 10f);
+		CWTBDragToMove templateDrag = template.GetComponent<CWTBDragToMove>();
+		Transform templateOriginal = templateDrag == null ? null : templateDrag.originalPos;
+		Vector3 originalStep = slotStep;
+		if (templateOriginal != null && handSlots.Count > 1)
+		{
+			CWTBDragToMove previousDrag = handSlots[handSlots.Count - 2].GetComponent<CWTBDragToMove>();
+			if (previousDrag != null && previousDrag.originalPos != null)
+			{
+				originalStep = templateOriginal.localPosition - previousDrag.originalPos.localPosition;
+			}
+		}
+		while (handSlots.Count < maxHandSize)
+		{
+			int slotNumber = handSlots.Count + 1;
+			GameObject newSlot = Instantiate(template);
+			newSlot.name = "Card_" + slotNumber;
+			newSlot.transform.SetParent(template.transform.parent, false);
+			newSlot.transform.localPosition = template.transform.localPosition + slotStep * (slotNumber - playerHands.Length);
+			newSlot.transform.localRotation = template.transform.localRotation;
+			newSlot.transform.localScale = template.transform.localScale;
+			CWTBDragToMove newDrag = newSlot.GetComponent<CWTBDragToMove>();
+			if (newDrag != null && templateOriginal != null)
+			{
+				GameObject originalMarker = new GameObject(newSlot.name + "_OriginalPos");
+				originalMarker.transform.SetParent(templateOriginal.parent, false);
+				originalMarker.transform.localPosition = templateOriginal.localPosition + originalStep * (slotNumber - playerHands.Length);
+				originalMarker.transform.localRotation = templateOriginal.localRotation;
+				originalMarker.transform.localScale = templateOriginal.localScale;
+				newDrag.originalPos = originalMarker.transform;
+			}
+			newSlot.SetActive(false);
+			handSlots.Add(newSlot);
+		}
+		playerHands = handSlots.ToArray();
 	}
 
 	private void UpdateHandCardStatus(GameObject cardObj, bool enable, int cost)
@@ -282,6 +330,10 @@ public class CWPlayerHandsController : MonoBehaviour
 
 	public void TriggerSpell(PlayerType player, CardItem card)
 	{
+		if (player == PlayerType.User && LanRealtimeManager.IsRealtimeBattle)
+		{
+			LanRealtimeManager.Instance.ReportCardPlayed(card, lane);
+		}
 		if (card.Form.Rarity >= 5)
 		{
 			phaseMgr.Phase = ((player != PlayerType.User) ? BattlePhase.P2SetupActionRareCard : BattlePhase.P1SetupActionRareCard);
@@ -312,6 +364,10 @@ public class CWPlayerHandsController : MonoBehaviour
 	public void Summon(int lane, CardItem card)
 	{
 		cardMgr.CardSelected = false;
+		if (LanRealtimeManager.IsRealtimeBattle)
+		{
+			LanRealtimeManager.Instance.ReportCardPlayed(card, lane);
+		}
 		GameInstance.Summon(PlayerType.User, lane, card);
 	}
 

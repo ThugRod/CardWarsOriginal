@@ -2,11 +2,31 @@ using System.Collections.Generic;
 
 public static class CardWarsModSettings
 {
-	public const bool AllContentUnlocked = true;
+	public static bool AllContentUnlocked
+	{
+		get { return CardWarsProfileManager.ActiveProfile.allContentUnlocked; }
+	}
 
-	public const bool InfiniteCoins = true;
+	public static bool InfiniteCoins
+	{
+		get { return CardWarsProfileManager.ActiveProfile.infiniteCoins; }
+	}
 
 	public const int InfiniteCoinBalance = 1000000000;
+
+	public static bool InfiniteGems
+	{
+		get { return CardWarsProfileManager.ActiveProfile.infiniteGems; }
+	}
+
+	public const int InfiniteGemBalance = 1000000000;
+
+	public static bool InfiniteStamina
+	{
+		get { return CardWarsProfileManager.ActiveProfile.infiniteStamina; }
+	}
+
+	public const int InfiniteStaminaBalance = 9999;
 }
 
 public static class CardWarsMod
@@ -27,9 +47,16 @@ public static class CardWarsMod
 			DisableTutorialAndDungeonLocks();
 		}
 
-		if (CardWarsModSettings.InfiniteCoins)
+		EnsureInfiniteStamina(playerInfo);
+		CardWarsProfileManager.ApplyActiveProfile(playerInfo);
+	}
+
+	public static void EnsureInfiniteStamina(PlayerInfoScript playerInfo)
+	{
+		if (playerInfo != null && CardWarsModSettings.InfiniteStamina)
 		{
-			playerInfo.Coins = CardWarsModSettings.InfiniteCoinBalance;
+			playerInfo.Stamina_Max = CardWarsModSettings.InfiniteStaminaBalance;
+			playerInfo.Stamina = CardWarsModSettings.InfiniteStaminaBalance;
 		}
 	}
 

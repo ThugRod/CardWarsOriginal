@@ -5,7 +5,7 @@ public class EmptyLaneCards : SpellScript
 		bool flag = CardScript.CanPlay(player, lane, card);
 		if (flag)
 		{
-			if (GameState.Instance.GetCardsInHand(player) < 7 && GameState.Instance.GetDeck(player).CardCount() > 0 && GameState.Instance.EmptyLaneCount(player) > 0)
+			if (GameState.Instance.GetCardsInHand(player) < BattleModeRules.MaxHandSize && GameState.Instance.GetDeck(player).CardCount() > 0 && GameState.Instance.EmptyLaneCount(player) > 0)
 			{
 				return true;
 			}

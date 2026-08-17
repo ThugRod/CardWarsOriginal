@@ -65,6 +65,11 @@ public class CWBattleEndRewardWinner : AsyncData<string>
 	{
 		GlobalFlags instance = GlobalFlags.Instance;
 		PlayerInfoScript instance2 = PlayerInfoScript.GetInstance();
+		if (BattleModeRules.IsSoloTurbo)
+		{
+			QuestEarningManager.GetInstance().InitCardHistory(instance2);
+			return;
+		}
 		AwardTreasureCatLoot();
 		QuestEarningManager.GetInstance().InitCardHistory(instance2);
 		BattleResolver battleResolver = GameState.Instance.BattleResolver;

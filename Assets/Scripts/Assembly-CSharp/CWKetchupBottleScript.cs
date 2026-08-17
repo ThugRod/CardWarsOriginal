@@ -218,6 +218,10 @@ public class CWKetchupBottleScript : MonoBehaviour
 
 	private void SetupFirstPlayer(PlayerType player)
 	{
+		if (LanRealtimeManager.IsRealtimeBattle)
+		{
+			player = LanRealtimeManager.Instance.IsHost ? PlayerType.User : PlayerType.Opponent;
+		}
 		if (GlobalFlags.Instance.InMPMode)
 		{
 			whoGoesFirstLabel.text = string.Format(KFFLocalization.Get("!!FORMAT_PLAYER_GOES_FIRST"), (player != PlayerType.User) ? PlayerInfoScript.GetInstance().MPOpponentName : PlayerInfoScript.GetInstance().MPPlayerName);
@@ -227,7 +231,7 @@ public class CWKetchupBottleScript : MonoBehaviour
 			whoGoesFirstLabel.text = string.Format(KFFLocalization.Get("!!FORMAT_PLAYER_GOES_FIRST"), GameInstance.GetDeck(player).Leader.Form.Name);
 		}
 		tweenController.SendMessage("OnClick", SendMessageOptions.DontRequireReceiver);
-		GameInstance.SetMagicPoints(player, ParametersManager.Instance.Starting_Magic_Points);
+		GameInstance.SetMagicPoints(player, BattleModeRules.StartingMagic);
 		GameData.FirstPlayer = (int)player + 1;
 		CWiTweenCamTrigger component = battleReadyButton.GetComponent<CWiTweenCamTrigger>();
 		component.tweenName = ((player != PlayerType.User) ? "ToP2Setup" : "ToP1Setup");
