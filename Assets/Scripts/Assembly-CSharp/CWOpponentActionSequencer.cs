@@ -169,9 +169,20 @@ public class CWOpponentActionSequencer : MonoBehaviour
 		yield return StartCoroutine(LeaderAction());
 	}
 
-	public void FinishRemoteTurn()
+	public void FinishRemoteTurn(bool skipBattle)
 	{
-		NextPhase();
+		// The local first turn has already advanced GameData.Turn by the time the
+		// remote end-turn action is replayed. Trust the sender's decision instead
+		// of recalculating it from our newer local turn counter, otherwise this
+		// client starts a battle for which the peer never sent ring/state data.
+		if (skipBattle)
+		{
+			BattleManagerScript.GetInstance().P2BattleFinished();
+		}
+		else
+		{
+			BattlePhaseManager.GetInstance().Phase = BattlePhase.P2BattleBanner;
+		}
 	}
 
 	private IEnumerator Reshuffle()

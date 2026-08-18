@@ -222,14 +222,20 @@ public class SearchOpponent : AsyncData<MatchData>
 		{
 			lanReadyButton.enabled = false;
 		}
+		// RefreshMatch starts the original automatic countdown and invokes the
+		// PlayQuestButton itself when it reaches zero. Keep that component enabled,
+		// but make the reused button a disabled-looking status indicator so players
+		// cannot start one phone early by tapping it.
 		if (lanPlayButton != null)
 		{
 			lanPlayButton.enabled = true;
 		}
 		if (lanReadyLabel != null)
 		{
-			SetLanButtonLabel(lanReadyLabel, "JUGAR", 62);
+			SetLanButtonLabel(lanReadyLabel, "ESPERANDO...", 52);
 		}
+		SetLanButtonCollider(GoButton, false);
+		SetLanButtonWaitingTint(GoButton);
 		UICamera.UnlockInput();
 	}
 
@@ -418,7 +424,14 @@ public class SearchOpponent : AsyncData<MatchData>
 		UILabel[] labels = button.GetComponentsInChildren<UILabel>(true);
 		for (int i = 0; i < labels.Length; i++)
 		{
-			if (labels[i].gameObject.activeInHierarchy)
+			if (labels[i].gameObject.name == "Battle")
+			{
+				return labels[i];
+			}
+		}
+		for (int i = 0; i < labels.Length; i++)
+		{
+			if (labels[i].gameObject.activeInHierarchy && labels[i].gameObject.name != "Stamina" && labels[i].gameObject.name != "StaminaLabel")
 			{
 				return labels[i];
 			}
@@ -428,6 +441,14 @@ public class SearchOpponent : AsyncData<MatchData>
 
 	private static void PrepareLanButtonArtwork(GameObject button)
 	{
+		Transform[] transforms = button.GetComponentsInChildren<Transform>(true);
+		for (int i = 0; i < transforms.Length; i++)
+		{
+			if (transforms[i].gameObject.name == "Stamina" || transforms[i].gameObject.name == "StaminaLabel")
+			{
+				transforms[i].gameObject.SetActive(false);
+			}
+		}
 		UISprite[] sprites = button.GetComponentsInChildren<UISprite>(true);
 		for (int i = 0; i < sprites.Length; i++)
 		{
@@ -437,6 +458,33 @@ public class SearchOpponent : AsyncData<MatchData>
 				sprites[i].spriteName = "uiButtonGreen";
 				sprites[i].transform.localScale = scale;
 			}
+		}
+	}
+
+	private static void SetLanButtonCollider(GameObject button, bool enabled)
+	{
+		if (button == null)
+		{
+			return;
+		}
+		Collider[] colliders = button.GetComponentsInChildren<Collider>(true);
+		for (int i = 0; i < colliders.Length; i++)
+		{
+			colliders[i].enabled = enabled;
+		}
+	}
+
+	private static void SetLanButtonWaitingTint(GameObject button)
+	{
+		if (button == null)
+		{
+			return;
+		}
+		UISprite[] sprites = button.GetComponentsInChildren<UISprite>(true);
+		Color waitingColor = new Color(0.45f, 0.45f, 0.45f, 1f);
+		for (int i = 0; i < sprites.Length; i++)
+		{
+			sprites[i].color = waitingColor;
 		}
 	}
 

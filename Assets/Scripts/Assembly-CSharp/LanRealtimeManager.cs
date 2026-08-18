@@ -27,7 +27,7 @@ public class LanRealtimeManager : MonoBehaviour
 	[Serializable]
 	private class WirePacket
 	{
-		public int protocol = 4;
+		public int protocol = 6;
 		public int sequence;
 		public string type;
 		public string payload;
@@ -65,6 +65,13 @@ public class LanRealtimeManager : MonoBehaviour
 		public int targetIndex = -1;
 		public string battleResult;
 		public int randomSeed;
+		public bool skipBattle;
+		public float ringAngle = -1f;
+		public float ringTotalTime;
+		public float ringHitAreaStart;
+		public float ringHitAreaEnd;
+		public float ringCritAreaStart;
+		public float ringCritAreaEnd;
 	}
 
 	[Serializable]
@@ -88,8 +95,8 @@ public class LanRealtimeManager : MonoBehaviour
 
 	public const int Port = 39777;
 	private const int DiscoveryPort = 39778;
-	private const string DiscoveryRequest = "CARDWARS_LAN_DISCOVER_V4";
-	private const string DiscoveryResponse = "CARDWARS_LAN_HOST_V4";
+	private const string DiscoveryRequest = "CARDWARS_LAN_DISCOVER_V6";
+	private const string DiscoveryResponse = "CARDWARS_LAN_HOST_V6";
 	public static LanRealtimeManager Instance { get; private set; }
 	public static bool IsConnected
 	{
@@ -153,7 +160,8 @@ public class LanRealtimeManager : MonoBehaviour
 	private readonly ConcurrentQueue<string> notices = new ConcurrentQueue<string>();
 	private readonly Queue<BattleActionPayload> remoteBattleActions = new Queue<BattleActionPayload>();
 	private readonly Queue<BattleActionPayload> remoteTargets = new Queue<BattleActionPayload>();
-	private readonly Dictionary<int, string> remoteBattleResults = new Dictionary<int, string>();
+	private readonly Dictionary<int, BattleActionPayload> remoteRingStarts = new Dictionary<int, BattleActionPayload>();
+	private readonly Dictionary<int, BattleActionPayload> remoteBattleResults = new Dictionary<int, BattleActionPayload>();
 	private readonly Dictionary<int, BattleStatePayload> remoteBattleStates = new Dictionary<int, BattleStatePayload>();
 	private Action peerReadyCallback;
 	private string joinAddress = string.Empty;
@@ -376,6 +384,7 @@ public class LanRealtimeManager : MonoBehaviour
 		PingMilliseconds = 0;
 		remoteBattleActions.Clear();
 		remoteTargets.Clear();
+		remoteRingStarts.Clear();
 		remoteBattleResults.Clear();
 		remoteBattleStates.Clear();
 		IsApplyingRemoteAction = false;
@@ -756,7 +765,7 @@ public class LanRealtimeManager : MonoBehaviour
 			SetState(ConnectionState.Error, "Paquete LAN inválido: " + exception.Message);
 			return;
 		}
-		if (wirePacket == null || wirePacket.protocol != 4)
+		if (wirePacket == null || wirePacket.protocol != 6)
 		{
 			SetState(ConnectionState.Error, "Las dos versiones del mod LAN no coinciden");
 			return;
@@ -805,9 +814,13 @@ public class LanRealtimeManager : MonoBehaviour
 				{
 					remoteTargets.Enqueue(action);
 				}
+				else if (action.kind == "ring_start")
+				{
+					remoteRingStarts[action.lane] = action;
+				}
 				else if (action.kind == "battle_result")
 				{
-					remoteBattleResults[action.lane] = action.battleResult;
+					remoteBattleResults[action.lane] = action;
 				}
 				else
 				{
@@ -906,10 +919,29 @@ public class LanRealtimeManager : MonoBehaviour
 		{
 			return;
 		}
-		SendBattleAction(CreateAction("end_turn"));
+		BattleActionPayload action = CreateAction("end_turn");
+		GameDataScript gameDataScript = GameDataScript.GetInstance();
+		action.skipBattle = gameDataScript != null && gameDataScript.Turn <= 1;
+		SendBattleAction(action);
 	}
 
-	public void ReportBattleResult(int lane, string result)
+	public void ReportRingStarted(int lane, float totalTime, float hitAreaStart, float hitAreaEnd, float critAreaStart, float critAreaEnd)
+	{
+		if (!IsRealtimeBattle || IsApplyingRemoteAction)
+		{
+			return;
+		}
+		BattleActionPayload action = CreateAction("ring_start");
+		action.lane = lane;
+		action.ringTotalTime = totalTime;
+		action.ringHitAreaStart = hitAreaStart;
+		action.ringHitAreaEnd = hitAreaEnd;
+		action.ringCritAreaStart = critAreaStart;
+		action.ringCritAreaEnd = critAreaEnd;
+		SendBattleAction(action);
+	}
+
+	public void ReportBattleResult(int lane, string result, float ringAngle)
 	{
 		if (!IsRealtimeBattle || IsApplyingRemoteAction)
 		{
@@ -918,6 +950,7 @@ public class LanRealtimeManager : MonoBehaviour
 		BattleActionPayload action = CreateAction("battle_result");
 		action.lane = lane;
 		action.battleResult = result;
+		action.ringAngle = ringAngle;
 		SendBattleAction(action);
 	}
 
@@ -948,7 +981,7 @@ public class LanRealtimeManager : MonoBehaviour
 			}
 			else if (action.kind == "end_turn")
 			{
-				sequencer.FinishRemoteTurn();
+				sequencer.FinishRemoteTurn(action.skipBattle);
 				IsApplyingRemoteAction = false;
 				yield break;
 			}
@@ -956,17 +989,31 @@ public class LanRealtimeManager : MonoBehaviour
 		}
 	}
 
-	public IEnumerator WaitForRemoteBattleResult(int lane, Action<string> callback)
+	public IEnumerator WaitForRemoteRingStart(int lane, Action<BattleActionPayload> callback)
+	{
+		while (IsRealtimeBattle && !remoteRingStarts.ContainsKey(lane))
+		{
+			yield return null;
+		}
+		BattleActionPayload action;
+		if (remoteRingStarts.TryGetValue(lane, out action))
+		{
+			remoteRingStarts.Remove(lane);
+			callback(action);
+		}
+	}
+
+	public IEnumerator WaitForRemoteBattleResult(int lane, Action<BattleActionPayload> callback)
 	{
 		while (IsRealtimeBattle && !remoteBattleResults.ContainsKey(lane))
 		{
 			yield return null;
 		}
-		string result;
-		if (remoteBattleResults.TryGetValue(lane, out result))
+		BattleActionPayload action;
+		if (remoteBattleResults.TryGetValue(lane, out action))
 		{
 			remoteBattleResults.Remove(lane);
-			callback(result);
+			callback(action);
 		}
 	}
 
