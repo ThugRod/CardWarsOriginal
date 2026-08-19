@@ -65,6 +65,11 @@ public class CWBattleEndRewardWinner : AsyncData<string>
 	{
 		GlobalFlags instance = GlobalFlags.Instance;
 		PlayerInfoScript instance2 = PlayerInfoScript.GetInstance();
+		if (BattleModeRules.IsSoloTurbo)
+		{
+			QuestEarningManager.GetInstance().InitCardHistory(instance2);
+			return;
+		}
 		AwardTreasureCatLoot();
 		QuestEarningManager.GetInstance().InitCardHistory(instance2);
 		BattleResolver battleResolver = GameState.Instance.BattleResolver;
@@ -77,7 +82,10 @@ public class CWBattleEndRewardWinner : AsyncData<string>
 		{
 			if (instance.InMPMode && Asyncdata.processed)
 			{
-				global::Multiplayer.Multiplayer.MatchFinish(SessionManager.GetInstance().theSession, CWMPMapController.GetInstance().mLastMPData.mMatchID, false, StringCallback);
+				if (!LanRealtimeManager.IsLanMatch)
+				{
+					global::Multiplayer.Multiplayer.MatchFinish(SessionManager.GetInstance().theSession, CWMPMapController.GetInstance().mLastMPData.mMatchID, false, StringCallback);
+				}
 				if ((bool)TrophyEarned)
 				{
 					TrophyEarned.text = instance2.MPWinTrophies.ToString();

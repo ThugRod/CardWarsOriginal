@@ -48,6 +48,8 @@ public class SLOTGame : BusyIconController
 
 	private int saveMaxReqCount;
 
+	private bool screenConfigured;
+
 	public static SLOTGame GetInstance()
 	{
 		if (the_instance == null)
@@ -90,20 +92,21 @@ public class SLOTGame : BusyIconController
 
 	private void SetupScreen()
 	{
-		string text = SystemInfo.deviceModel.ToLower();
-		int num = text.IndexOf("amazon");
-		if (num >= 0)
+		if (screenConfigured)
 		{
-			Screen.autorotateToLandscapeLeft = true;
-			Screen.autorotateToLandscapeRight = false;
-			Screen.autorotateToPortrait = false;
-			Screen.autorotateToPortraitUpsideDown = false;
-			Screen.orientation = ScreenOrientation.LandscapeLeft;
+			return;
 		}
+		screenConfigured = true;
+		Screen.autorotateToLandscapeLeft = true;
+		Screen.autorotateToLandscapeRight = true;
+		Screen.autorotateToPortrait = false;
+		Screen.autorotateToPortraitUpsideDown = false;
+		Screen.orientation = ScreenOrientation.AutoRotation;
 	}
 
 	private void Awake()
 	{
+		SetupScreen();
 		Application.targetFrameRate = 60;
 		KFFNetwork.deserializeJSONCallback = DeserializeJSON;
 		UnityEngine.Object[] array = UnityEngine.Object.FindObjectsOfType(typeof(SLOTGame));

@@ -101,6 +101,7 @@ public class CWUpdatePlayerStats : MonoBehaviour
 		{
 			pInfo = PlayerInfoScript.GetInstance();
 		}
+		CardWarsMod.EnsureInfiniteStamina(pInfo);
 		maxSTM = pInfo.Stamina_Max;
 		currentSTM = pInfo.Stamina;
 		if (prevSTM != currentSTM)
@@ -133,6 +134,13 @@ public class CWUpdatePlayerStats : MonoBehaviour
 		else
 		{
 			staminaTimer.text = KFFLocalization.Get("!!G_STAMINA_FULL");
+		}
+		if (CardWarsModSettings.InfiniteStamina)
+		{
+			staminaBar.fillAmount = 1f;
+			staminaLabel.text = "∞";
+			staminaMaxLabel.text = "∞";
+			staminaTimer.text = "Ilimitado";
 		}
 		try
 		{

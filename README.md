@@ -1,10 +1,20 @@
 # Card Wars
-(NEWER ANDROID DEVICES - Just tap through the error saying the game is outdated, everything functions.)
+(Modern Android build: Unity 2022.3.55f1, IL2CPP, and ARM64.)
 
 Changes:
-- Updated the project to work with Unity 2022.3.33f
+- Updated the project to work with Unity 2022.3.55f1
+- Android builds use IL2CPP and ARM64 for modern 64-bit-only devices
+- Included an all-content-unlocked mod with infinite coins
 - Fixed multiple shader errors and network errors
 - Fixed deprecated code with updated Unity methods
+
+## Android ARM64 build
+
+Open the project with Unity 2022.3.55f1 and install Android Build Support, Android SDK & NDK Tools, and OpenJDK from Unity Hub. Build the Android player normally; the project is configured for IL2CPP and ARM64 (`arm64-v8a`). The minimum Android API remains 22 and the target API uses the highest SDK installed with Unity.
+
+## Included mod
+
+`Assets/Scripts/Assembly-CSharp/CardWarsMod.cs` enables all cards, leaders, quests, regions, dungeons, and skips tutorial locks whenever a profile is loaded. Coins are held at a minimum balance of 1,000,000,000, so purchases work normally without consuming the balance. Both features can be disabled through the constants in `CardWarsModSettings`.
 
 Issues:
 From what I've seen there's an issue on the Fionna and Cake level 24, I want to look into it and attempt a fix ASAP.
@@ -41,4 +51,4 @@ It's CARD WARS!
 
 ## Contributing
 Card Wars used Unity 2017.4.40f1. Other dependencies may be required.
-Imported to Unity 2022.3.33f for Android APK export compatibility
+Imported to Unity 2022.3.55f1 for Android ARM64 and 16 KB memory-page compatibility

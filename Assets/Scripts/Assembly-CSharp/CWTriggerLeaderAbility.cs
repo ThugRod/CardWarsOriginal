@@ -17,6 +17,10 @@ public class CWTriggerLeaderAbility : MonoBehaviour
 	{
 		if (!Used)
 		{
+			if (LanRealtimeManager.IsRealtimeBattle)
+			{
+				LanRealtimeManager.Instance.ReportLeaderAbility();
+			}
 			BattlePhaseManager.GetInstance().Phase = BattlePhase.P1LeaderAbility;
 			Used = true;
 			CWFloopActionManager.GetInstance().TriggerLeader(PlayerType.User);

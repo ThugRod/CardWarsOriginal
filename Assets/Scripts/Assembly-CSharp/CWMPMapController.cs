@@ -8,6 +8,8 @@ public class CWMPMapController : MonoBehaviour
 
 		public string[] mCards;
 
+		public int[] mCardLevels;
+
 		public string OpponentLeader;
 
 		public int mLeaderLevel;
@@ -85,15 +87,11 @@ public class CWMPMapController : MonoBehaviour
 
 	private void Update()
 	{
-		if (!initialized && gflags.InMPMode)
+		if (!initialized && gflags != null && gflags.InMPMode)
 		{
-			SessionManager instance = SessionManager.GetInstance();
 			pInfo = PlayerInfoScript.GetInstance();
-			if (instance.IsReady())
-			{
-				MPMapRefresh();
-				initialized = true;
-			}
+			MPMapRefresh();
+			initialized = true;
 		}
 	}
 }

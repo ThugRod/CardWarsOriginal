@@ -9,7 +9,7 @@ public class ReturnCardTypeLeader : LeaderScript
 		bool flag = LeaderScript.CanPlay(player, lane, card);
 		if (flag)
 		{
-			if (GameState.Instance.GetCardsInHand(player) >= 7)
+			if (GameState.Instance.GetCardsInHand(player) >= BattleModeRules.MaxHandSize)
 			{
 				return false;
 			}

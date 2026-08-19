@@ -73,16 +73,19 @@ public class ResultsScreenButtonScript : MonoBehaviour
 		{
 			Resources.UnloadUnusedAssets();
 			GlobalFlags.Instance.ReturnToMainMenu = true;
-			PlayerInfoScript instance = PlayerInfoScript.GetInstance();
-			QuestData currentQuest = instance.GetCurrentQuest();
-			if (instance.GetQuestProgress(currentQuest) > 0)
+			if (!BattleModeRules.IsSoloTurbo)
 			{
-				GlobalFlags.Instance.NewlyCleared = true;
-				instance.SetLastClearedQuest(currentQuest);
+				PlayerInfoScript instance = PlayerInfoScript.GetInstance();
+				QuestData currentQuest = instance.GetCurrentQuest();
+				if (instance.GetQuestProgress(currentQuest) > 0)
+				{
+					GlobalFlags.Instance.NewlyCleared = true;
+					instance.SetLastClearedQuest(currentQuest);
+				}
+				List<CardItem> earnedCards = QuestEarningManager.GetInstance().earnedCards;
+				instance.DeckManager.AddCards(earnedCards);
+				instance.Save();
 			}
-			List<CardItem> earnedCards = QuestEarningManager.GetInstance().earnedCards;
-			instance.DeckManager.AddCards(earnedCards);
-			instance.Save();
 			StartCoroutine(GoToMainMenu());
 		}
 		if (Phase == 4)
@@ -115,6 +118,7 @@ public class ResultsScreenButtonScript : MonoBehaviour
 		yield return Resources.UnloadUnusedAssets();
 		Time.timeScale = savedTimeScale;
 		UICamera.useInputEnabler = false;
+		BattleModeRules.UseNormalMode();
 		SLOTGameSingleton<SLOTSceneManager>.GetInstance().LoadLevel("AdventureTime");
 	}
 }

@@ -111,6 +111,10 @@ public class PlayQuestButton : AsyncData<string>
 
 	private void OnClick()
 	{
+		if (!enabled)
+		{
+			return;
+		}
 		UIButtonSound component = GetComponent<UIButtonSound>();
 		if (cwQuestLoad != null && !cwQuestLoad.CanStartQuest())
 		{
@@ -119,25 +123,17 @@ public class PlayQuestButton : AsyncData<string>
 		}
 		if (GlobalFlags.Instance.InMPMode && Asyncdata.processed)
 		{
-			CWMPMapController.MPData mLastMPData = CWMPMapController.GetInstance().mLastMPData;
-			int num = 0;
-			string leader = "Leader_Jake";
-			if (CWDeckController.GetInstance() != null)
+			if (LanRealtimeManager.IsLanMatch && LanRealtimeManager.Instance.PeerProfile != null)
 			{
-				int currentMPDeck = CWDeckController.GetInstance().currentMPDeck;
-				Deck deck = PlayerInfoScript.GetInstance().DeckManager.Decks[currentMPDeck];
-				leader = deck.Leader.Form.ID;
-				num = deck.Leader.Rank;
+				LanRealtimeManager.Instance.ApplyPeerProfileToLegacyState();
+				HeartAnimation();
+				component.audioClip = cwQuestLoad.okSound;
+				GlobalFlags.Instance.enableMapDrag = true;
+				return;
 			}
-			if ((bool)LoadingActivityShow)
-			{
-				LoadingActivityShow.Play(true);
-			}
-			if ((bool)RefreshMatchScript)
-			{
-				RefreshMatchScript.StopAllCoroutines();
-			}
-			global::Multiplayer.Multiplayer.MatchGetDeck(SessionManager.GetInstance().theSession, mLastMPData.mMatchID, num, leader, num, StringCallback);
+			LanRealtimeManager.Instance.ShowLobby(null);
+			component.audioClip = cwQuestLoad.errorSound;
+			return;
 		}
 		if (!GlobalFlags.Instance.InMPMode)
 		{

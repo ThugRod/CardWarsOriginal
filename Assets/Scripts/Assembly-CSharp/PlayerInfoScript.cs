@@ -407,11 +407,16 @@ public class PlayerInfoScript : MonoBehaviour
 	{
 		get
 		{
-			return decryptValue(mCoins);
+			int num = decryptValue(mCoins);
+			return (!CardWarsModSettings.InfiniteCoins) ? num : Math.Max(num, CardWarsModSettings.InfiniteCoinBalance);
 		}
 		set
 		{
 			value = Math.Max(0, value);
+			if (CardWarsModSettings.InfiniteCoins)
+			{
+				return;
+			}
 			int num = decryptValue(mCoins);
 			int num2 = value - num;
 			int num3 = decryptValue(mCoinsAccumulated);
@@ -428,10 +433,16 @@ public class PlayerInfoScript : MonoBehaviour
 	{
 		get
 		{
-			return decryptValue(mGemStr);
+			int num = decryptValue(mGemStr);
+			return (!CardWarsModSettings.InfiniteGems) ? num : Math.Max(num, CardWarsModSettings.InfiniteGemBalance);
 		}
 		set
 		{
+			value = Math.Max(0, value);
+			if (CardWarsModSettings.InfiniteGems)
+			{
+				return;
+			}
 			int num = decryptValue(mGemStr);
 			int num2 = value - num;
 			int num3 = decryptValue(mGemsAccumulated);
@@ -594,6 +605,10 @@ public class PlayerInfoScript : MonoBehaviour
 
 	public bool IsRegionLocked(string mapQuestType, int regionID)
 	{
+		if (CardWarsModSettings.AllContentUnlocked)
+		{
+			return false;
+		}
 		try
 		{
 			return !UnlockedRegions[mapQuestType].Contains(regionID);
@@ -2419,6 +2434,8 @@ public class PlayerInfoScript : MonoBehaviour
 	public static void Load()
 	{
 		g_playerInfoScript.Initialize();
+		CardWarsMod.Apply(g_playerInfoScript);
+		g_playerInfoScript.isInitialized = true;
 	}
 
 	private string GetDefaultGameStateJson()
@@ -2787,6 +2804,11 @@ public class PlayerInfoScript : MonoBehaviour
 
 	public void StartMatch(QuestData qd, int staminaCost)
 	{
+		if (CardWarsModSettings.InfiniteStamina)
+		{
+			staminaCost = 0;
+			CardWarsMod.EnsureInfiniteStamina(this);
+		}
 		Stamina -= staminaCost;
 		LastTimestamp = TFUtils.ServerTime.ToString();
 		if (Stamina + staminaCost == Stamina_Max)

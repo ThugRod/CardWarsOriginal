@@ -47,10 +47,36 @@ public class CWPlayCardsController : MonoBehaviour
 
 	public void SetHoldingCardsVisibility()
 	{
-		for (int i = 0; i < 7; i++)
+		EnsureCardCapacity();
+		for (int i = 0; i < cards.Length; i++)
 		{
 			bool active = ((i < CurrentHand.Count) ? true : false);
 			cards[i].SetActive(active);
 		}
+	}
+
+	private void EnsureCardCapacity()
+	{
+		int maxHandSize = BattleModeRules.MaxHandSize;
+		if (cards == null || cards.Length == 0 || cards.Length >= maxHandSize)
+		{
+			return;
+		}
+		List<GameObject> cardSlots = new List<GameObject>(cards);
+		GameObject template = cardSlots[cardSlots.Count - 1];
+		Vector3 step = cardSlots.Count > 1 ? template.transform.localPosition - cardSlots[cardSlots.Count - 2].transform.localPosition : new Vector3(150f, 0f, 10f);
+		while (cardSlots.Count < maxHandSize)
+		{
+			int slotNumber = cardSlots.Count + 1;
+			GameObject newSlot = Instantiate(template);
+			newSlot.name = "Card_" + slotNumber;
+			newSlot.transform.SetParent(template.transform.parent, false);
+			newSlot.transform.localPosition = template.transform.localPosition + step * (slotNumber - cards.Length);
+			newSlot.transform.localRotation = template.transform.localRotation;
+			newSlot.transform.localScale = template.transform.localScale;
+			newSlot.SetActive(false);
+			cardSlots.Add(newSlot);
+		}
+		cards = cardSlots.ToArray();
 	}
 }

@@ -8,6 +8,10 @@ public class CWBattleEndRewardLoser : MonoBehaviour
 
 	private void OnClick()
 	{
+		if (BattleModeRules.IsSoloTurbo)
+		{
+			return;
+		}
 		if (GameState.Instance.BattleResolver != null)
 		{
 			GameState.Instance.BattleResolver.SetResult(PlayerType.Opponent);

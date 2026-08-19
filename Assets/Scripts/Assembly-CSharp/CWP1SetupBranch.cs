@@ -38,6 +38,10 @@ public class CWP1SetupBranch : MonoBehaviour
 
 	public void Advance()
 	{
+		if (LanRealtimeManager.IsRealtimeBattle)
+		{
+			LanRealtimeManager.Instance.ReportEndTurn();
+		}
 		if (GameDataScript.GetInstance().Turn <= 1)
 		{
 			BattleManagerScript.GetInstance().P1BattleFinished();

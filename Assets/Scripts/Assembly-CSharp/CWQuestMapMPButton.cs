@@ -38,93 +38,23 @@ public class CWQuestMapMPButton : AsyncData<MultiplayerData>
 
 	private void OnClick()
 	{
-		if ((!(mainMenuCamera != null) || (mainMenuCamera.gameObject.activeInHierarchy && mainMenuCamera.enabled)) && (!(AnimationScripts != null) || !AnimationScripts.IsPlayingStartAnimRevert()) && Asyncdata.processed && SessionManager.GetInstance().IsReady())
+		if ((!(mainMenuCamera != null) || (mainMenuCamera.gameObject.activeInHierarchy && mainMenuCamera.enabled)) && (!(AnimationScripts != null) || !AnimationScripts.IsPlayingStartAnimRevert()))
 		{
-			if ((bool)LoadingActivityShow)
+			PlayerInfoScript instance = PlayerInfoScript.GetInstance();
+			if (instance == null)
 			{
-				LoadingActivityShow.Play(true);
+				return;
 			}
-			ReauthenticationHelper component = GetComponent<ReauthenticationHelper>();
-			if (!(component != null) || !component.Reauthenticate(delegate(ReauthenticationHelper.Result result)
+			if (string.IsNullOrEmpty(instance.MPPlayerName))
 			{
-				switch (result)
-				{
-				case ReauthenticationHelper.Result.SUCCESS:
-					StartMultiplayerActivation();
-					break;
-				case ReauthenticationHelper.Result.SUCCESS_FORCED_RESTART:
-					if ((bool)LoadingActivityHide)
-					{
-						LoadingActivityHide.Play(true);
-					}
-					break;
-				default:
-					if ((bool)LoadingActivityHide)
-					{
-						LoadingActivityHide.Play(true);
-					}
-					if ((bool)ConnectionFailedShow)
-					{
-						ConnectionFailedShow.Play(true);
-					}
-					break;
-				}
-			}))
-			{
-				StartMultiplayerActivation();
+				instance.MPPlayerName = "Jugador LAN";
 			}
+			EnterMap();
 		}
-	}
-
-	private void StartMultiplayerActivation()
-	{
-		global::Multiplayer.Multiplayer.GetMultiplayerStatus(SessionManager.GetInstance().theSession, MultiplayerDataCallback);
-	}
-
-	private void MultiplayerDataCallback(MultiplayerData data, ResponseFlag flag)
-	{
-		Asyncdata.Set(flag, data);
 	}
 
 	private void Update()
 	{
-		if (!Asyncdata.processed)
-		{
-			Asyncdata.processed = true;
-			PlayerInfoScript instance = PlayerInfoScript.GetInstance();
-			if ((bool)LoadingActivityHide)
-			{
-				LoadingActivityHide.Play(true);
-			}
-			if (Asyncdata.MP_Data == null)
-			{
-				if (Asyncdata.flag == ResponseFlag.None)
-				{
-					if ((bool)ShowEnterMPNameUI)
-					{
-						ShowEnterMPNameUI.Play(true);
-					}
-					if ((bool)HideBottonInfo)
-					{
-						HideBottonInfo.Play(true);
-					}
-				}
-				else if ((bool)UnderMaintenance)
-				{
-					UnderMaintenance.Play(true);
-				}
-			}
-			else
-			{
-				TutorialMonitor.Instance.TriggerTutorial(TutorialTrigger.MultiplayerUnlocked);
-				if ((bool)instance)
-				{
-					instance.TotalTrophies = Asyncdata.MP_Data.trophies;
-					instance.MPPlayerName = Asyncdata.MP_Data.name;
-				}
-				EnterMap();
-			}
-		}
 		if (daggerAnimationPlaying && battleMapAnimation != null && idleAnimation != null && !battleMapAnimation.isPlaying)
 		{
 			daggerAnimationPlaying = false;

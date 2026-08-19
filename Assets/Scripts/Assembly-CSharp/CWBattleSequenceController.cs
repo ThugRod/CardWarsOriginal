@@ -281,7 +281,7 @@ public class CWBattleSequenceController : MonoBehaviour
 						forceCrit = false;
 					}
 				}
-				if (PlayerInfoScript.GetInstance().AutoBattleSetting)
+				if (PlayerInfoScript.GetInstance().AutoBattleSetting && !LanRealtimeManager.IsRealtimeBattle)
 				{
 					result = ((phaseMgr.Phase != BattlePhase.P1Battle) ? "Miss" : "Hit");
 					UpdateBattleCamera();
@@ -315,7 +315,15 @@ public class CWBattleSequenceController : MonoBehaviour
 		leaderForm = GameInstance.GetDeck(PlayerType.User).Leader.Form;
 		SetUpRing(leaderForm, lane);
 		yield return new WaitForSeconds(1f);
-		if (forceMiss || forceCrit)
+		if (LanRealtimeManager.IsRealtimeBattle && phaseMgr.Phase == BattlePhase.P1Battle)
+		{
+			LanRealtimeManager.Instance.ReportRingStarted(lane, totalTime, hitAreaStart, hitAreaEnd, critAreaStart, critAreaEnd);
+		}
+		if (LanRealtimeManager.IsRealtimeBattle && phaseMgr.Phase == BattlePhase.P2Battle)
+		{
+			yield return StartCoroutine(PlayRemoteRingResult());
+		}
+		else if (forceMiss || forceCrit)
 		{
 			yield return StartCoroutine(StopRing());
 		}
@@ -331,6 +339,74 @@ public class CWBattleSequenceController : MonoBehaviour
 		{
 			tapDelegate.disableFlag = false;
 		}
+	}
+
+	private IEnumerator PlayRemoteRingResult()
+	{
+		LanRealtimeManager.BattleActionPayload remoteRingStart = null;
+		yield return StartCoroutine(LanRealtimeManager.Instance.WaitForRemoteRingStart(lane, delegate(LanRealtimeManager.BattleActionPayload value)
+		{
+			remoteRingStart = value;
+		}));
+		if (remoteRingStart != null)
+		{
+			ApplyRemoteRingConfiguration(remoteRingStart);
+		}
+		animateFlag = true;
+		SLOTGameSingleton<SLOTAudioManager>.GetInstance().PlaySound(GetComponent<AudioSource>());
+		Time.timeScale = 0f;
+		LanRealtimeManager.BattleActionPayload remoteResult = null;
+		yield return StartCoroutine(LanRealtimeManager.Instance.WaitForRemoteBattleResult(lane, delegate(LanRealtimeManager.BattleActionPayload value)
+		{
+			remoteResult = value;
+		}));
+		Time.timeScale = 1f;
+		_keyPressed = true;
+		animateFlag = false;
+		if (remoteResult == null)
+		{
+			yield break;
+		}
+		if (remoteResult.ringAngle >= 0f)
+		{
+			currentAngle = Mathf.Repeat(remoteResult.ringAngle, 1f);
+			barSprite.transform.localRotation = Quaternion.Euler(0f, 0f, currentAngle * -360f);
+		}
+		string remoteAttackResult = remoteResult.battleResult;
+		result = ((remoteAttackResult == "Miss") ? "Hit" : "Miss");
+		GetTweenTarget(remoteAttackResult).SendMessage("OnClick", SendMessageOptions.DontRequireReceiver);
+		yield return new WaitForSeconds(0.3f);
+		GetComponent<AudioSource>().Stop();
+		awayTweenTarget.SendMessage("OnClick", SendMessageOptions.DontRequireReceiver);
+		yield return new WaitForSeconds(0.2f);
+		yield return StartCoroutine(BattleAction());
+	}
+
+	private void ApplyRemoteRingConfiguration(LanRealtimeManager.BattleActionPayload setup)
+	{
+		LeaderForm remoteLeader = GameInstance.GetDeck(PlayerType.Opponent).Leader.Form;
+		leaderForm = remoteLeader;
+		totalTime = Mathf.Max(0.01f, setup.ringTotalTime);
+		hitAreaStart = setup.ringHitAreaStart;
+		hitAreaEnd = setup.ringHitAreaEnd;
+		critAreaStart = setup.ringCritAreaStart;
+		critAreaEnd = setup.ringCritAreaEnd;
+		tapToAttack.text = KFFLocalization.Get("!!Q_5_TAPTOATTACK");
+		Color hitColor = GetColorRGBA(remoteLeader.Ring_P1_HitColor);
+		SetAreaObj(hitAreaStart, hitAreaEnd - hitAreaStart, hitAreaSprite, hitColor);
+		SetAreaObj(hitAreaStart, hitAreaEnd - hitAreaStart, hitAreaFXSprite, hitColor);
+		baseSprite.spriteName = remoteLeader.Ring_P1_BGSprite;
+		baseSpriteDupFX.spriteName = remoteLeader.Ring_P1_BGSprite;
+		Color backgroundColor = GetColorRGBA(remoteLeader.Ring_P1_BGColor);
+		SetAreaObj(hitAreaStart, 1f, baseSprite, backgroundColor);
+		SetAreaObj(hitAreaStart, 1f, baseSpriteDupFX, backgroundColor);
+		SetAreaObj(hitAreaStart, 1f, baseSpriteOutline, Color.white);
+		Color critColor = GetColorRGBA(remoteLeader.Ring_P1_CritColor);
+		SetAreaObj(hitAreaStart, critAreaEnd - hitAreaStart, critAreaSprite, critColor);
+		RotateRingObj(hitAreaStart, hitAreaEdgeStart);
+		RotateRingObj(hitAreaEnd, hitAreaEdgeEnd);
+		RotateRingObj(critAreaEnd, critAreaEdgeEnd);
+		barSprite.spriteName = remoteLeader.Ring_P1_BarSprite;
 	}
 
 	private IEnumerator WaitForKeyPress()
@@ -523,6 +599,10 @@ public class CWBattleSequenceController : MonoBehaviour
 		{
 			result = "Miss";
 		}
+		if (LanRealtimeManager.IsRealtimeBattle && phaseMgr.Phase == BattlePhase.P1Battle)
+		{
+			LanRealtimeManager.Instance.ReportBattleResult(lane, result, currentAngle);
+		}
 		GetTweenTarget(result).SendMessage("OnClick", SendMessageOptions.DontRequireReceiver);
 		animateFlag = false;
 		yield return new WaitForSeconds(0.3f);
@@ -583,6 +663,17 @@ public class CWBattleSequenceController : MonoBehaviour
 			}
 		}
 		yield return new WaitForSeconds(0.5f);
+		if (LanRealtimeManager.IsRealtimeBattle)
+		{
+			if (phaseMgr.Phase == BattlePhase.P1Battle)
+			{
+				LanRealtimeManager.Instance.ReportBattleState(lane);
+			}
+			else if (phaseMgr.Phase == BattlePhase.P2Battle)
+			{
+				yield return StartCoroutine(LanRealtimeManager.Instance.WaitAndApplyRemoteBattleState(lane));
+			}
+		}
 		if (GameInstance.GetHealth(!player) == 0)
 		{
 			yield return StartCoroutine(BattleEnd(true));
